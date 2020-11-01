@@ -9,7 +9,7 @@
 #define WIFI_SSID     "WIFI_SSID" /* WIFI hotspot name */
 #define WIFI_PASS     "WIFI_PASS" /* WIFI hotspot password */
 #define WIFI_SLEEP    10          /* Timeout to collect and send data in seconds */
-#define BUFFER        WIFI_SLEEP / SENSORS_SLEEP
+#define BUFFER        WIFI_SLEEP / SENSORS_SLEEP  /* Circle buffer size */
 
 class Sensor {
   public:
@@ -19,16 +19,13 @@ class Sensor {
       pressure = p;
       humidity = h;
     }
-    ~Sensor() {
-      Serial.println("destroy");
-    }
     String toJson(int offset) {
       return "{\"o\":" + String(offset) + ","
-        "\"t\":" + String(temperature) + ","
-        "\"p\":" + String(pressure) + ","
-        "\"h\":" + String(humidity) + "}";
+             "\"t\":" + String(temperature) + ","
+             "\"p\":" + String(pressure) + ","
+             "\"h\":" + String(humidity) + "}";
     }
-  
+
     float temperature;
     int pressure;
     int humidity;
@@ -37,50 +34,44 @@ class Sensor {
 class Measures {
   public:
     Measures() {}
-   
+
     String toJsonAndClear() {
       int offset = 0;
       String result = "";
 
       /* Read values from end */
       for (int i = position - 1; i >= 0; i--) {
-        String json = data[i].toJson(offset);
-        if (i == position) {
-          result = json;
-        } else {
-          result.concat("," + json);
-        }
-        
+        if (!data[i]) continue;
+        String json = data[i]->toJson(offset);
+        result.concat(result.length() == 0 ? json : ("," + json));
         offset += SENSORS_SLEEP;
+        delete data[i];
       }
 
-      for (int i = BUFFER; i >= position; i--) {
-        String json = data[i].toJson(offset);
-        if (i == position) {
-          result = json;
-        } else {
-          result.concat("," + json);
-        }
-        
+      for (int i = BUFFER - 1; i >= position; i--) {
+        if (!data[i]) continue;
+        String json = data[i]->toJson(offset);
+        result.concat(result.length() == 0 ? json : ("," + json));
         offset += SENSORS_SLEEP;
+        delete data[i];
       }
 
       /* Reset position */
       position = 0;
       return "[" + result + "]";
     }
-    
-    void add(Sensor sensor) {
-      if (position == BUFFER - 1) {
+
+    void add(Sensor *sensor) {
+      if (position == BUFFER) {
         position = 0;
       }
 
       data[position] = sensor;
       position++;
     }
-    
+
   private:
-    Sensor data[BUFFER];
+    Sensor *data[BUFFER];
     int position;
 };
 
@@ -125,16 +116,16 @@ void readSensors() {
   digitalWrite(LED_BUILTIN, LOW); /* Single LED flash for read sensors operation */
 
   bme.takeForcedMeasurement();
-  Sensor current(
+  Sensor *current = new Sensor(
     bme.readTemperature(),
     bme.readPressure() / 100.0F,
     bme.readHumidity());
   measures.add(current);
 
-  Serial.println("Sensor values," 
-    " t: '" + String(current.temperature) + " C'"
-    " , h: '" + String(current.humidity) + " %'"
-    " , p: '" + String(current.pressure) + " hPA'");
+  Serial.println("Sensor values,"
+                 " t: '" + String(current->temperature) + " C'"
+                 " , h: '" + String(current->humidity) + " %'"
+                 " , p: '" + String(current->pressure) + " hPA'");
 
   delay(50);
   digitalWrite(LED_BUILTIN, HIGH);
@@ -152,13 +143,13 @@ void sendData() {
       digitalWrite(LED_BUILTIN, HIGH);
       delay(100);
     }
-  
+
     /* WI-FI connected, print connection details */
     Serial.print(F("WIFI connected to "));
     Serial.println(ssid);
     Serial.println("DHCP gives " + WiFi.localIP());
   }
-  
+
   /* Send data */
   Serial.println(F("Sending data ..."));
   Serial.println(measures.toJsonAndClear());
