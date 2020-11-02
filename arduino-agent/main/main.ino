@@ -14,20 +14,17 @@
 class Sensor {
   public:
     Sensor() {}
-    Sensor(float t, int p, int h) {
+    Sensor(float t, int h) {
       temperature = t;
-      pressure = p;
       humidity = h;
     }
     String toJson(int offset) {
       return "{\"o\":" + String(offset) + ","
              "\"t\":" + String(temperature) + ","
-             "\"p\":" + String(pressure) + ","
              "\"h\":" + String(humidity) + "}";
     }
 
     float temperature;
-    int pressure;
     int humidity;
 };
 
@@ -98,9 +95,9 @@ void setup() {
   bme.begin(&Wire);
   bme.setSampling(
     Adafruit_BME280::MODE_FORCED,
-    Adafruit_BME280::SAMPLING_X1, // temperature
-    Adafruit_BME280::SAMPLING_X1, // pressure
-    Adafruit_BME280::SAMPLING_X1, // humidity
+    Adafruit_BME280::SAMPLING_X1,   // temperature
+    Adafruit_BME280::SAMPLING_NONE, // pressure
+    Adafruit_BME280::SAMPLING_X1,   // humidity
     Adafruit_BME280::FILTER_OFF);
 
   /* Start timers */
@@ -118,14 +115,12 @@ void readSensors() {
   bme.takeForcedMeasurement();
   Sensor *current = new Sensor(
     bme.readTemperature(),
-    bme.readPressure() / 100.0F,
     bme.readHumidity());
   measures.add(current);
 
   Serial.println("Sensor values,"
                  " t: '" + String(current->temperature) + " C'"
-                 " , h: '" + String(current->humidity) + " %'"
-                 " , p: '" + String(current->pressure) + " hPA'");
+                 " , h: '" + String(current->humidity) + " %'");
 
   delay(50);
   digitalWrite(LED_BUILTIN, HIGH);
