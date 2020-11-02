@@ -1,0 +1,3 @@
+address: :8081
+ssl: false
+whitelist: example.com, www.example.com
