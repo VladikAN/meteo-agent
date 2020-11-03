@@ -31,23 +31,30 @@ func postMetrics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(m.Token) == 0 {
-		http.Error(w, "token value is empty", http.StatusBadRequest)
-		return
-	}
-
-	if len(m.Name) == 0 {
-		http.Error(w, "name value is empty", http.StatusBadRequest)
+	if result, reason := validatePostMetrics(m); result {
+		http.Error(w, reason, http.StatusBadRequest)
 		return
 	}
 
 	log.Printf("New message for '%s', '%s' agent, and %d measures", m.Token, m.Name, len(m.Data))
 
 	if len(m.Data) == 0 {
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusOK) // early exit
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(``))
+}
+
+func validatePostMetrics(m Metrics) (bool, string) {
+	if len(m.Token) == 0 {
+		return false, "token value is empty"
+	}
+
+	if len(m.Name) == 0 {
+		return false, "name value is empty"
+	}
+
+	return true, ""
 }

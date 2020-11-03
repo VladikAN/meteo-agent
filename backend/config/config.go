@@ -9,9 +9,20 @@ import (
 
 // Settings holds all application settings
 type Settings struct {
-	Address   string
-	Ssl       bool
+	// Address is an endpoint for the inbound connections
+	Address string
+
+	// Ssl is to use ssl or not
+	Ssl bool
+
+	// Whitelist is for lets encrypt domain names if Ssl is true
 	Whitelist []string
+
+	// InfluxHost is for target host with InfluxDB installed
+	InfluxHost string
+
+	// InfluxToken is for auth token to the InfluxDB
+	InfluxToken string
 }
 
 // Read is called first to read all settings
@@ -21,7 +32,7 @@ func Read(path string) (cfg Settings) {
 	viper.AddConfigPath(".")
 	viper.AddConfigPath(path)
 
-	viper.SetEnvPrefix("us")
+	viper.SetEnvPrefix("ma")
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 

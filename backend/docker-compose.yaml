@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+    influx:
+      image: influxdb:1.8
+      container_name: "influx"
+      hostname: "influx"
+      restart: always
+
+      volumes:
+        - influxdata:/var/lib/influxdb
+
+    meteo_agent:
+      image: vladikan/meteo-agent:latest
+      container_name: "meteo-agent"
+      hostname: "meteo-agent"
+      restart: always
+      
+      depends_on:
+        - influx
+  
+      logging:
+        driver: json-file
+        options:
+            max-size: "5m"
+            max-file: "5"
+  
+      environment:
+        - MA_ADDRESS
+        - MA_SSL
+        - MA_WHITELIST
+        - MA_INFLUX_HOST
+        - MA_INFLUX_TOKEN
+        
+volumes:
+    influxdata:
