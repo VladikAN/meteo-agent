@@ -21,8 +21,11 @@ type Settings struct {
 	// InfluxHost is for target host with InfluxDB installed
 	InfluxHost string
 
-	// InfluxToken is for auth token to the InfluxDB
-	InfluxToken string
+	// InfluxUser is for auth username to the InfluxDB
+	InfluxUser string
+
+	// INfluxPassword is for auth password for the InfluxDB
+	InfluxPassword string
 }
 
 // Read is called first to read all settings

@@ -4,9 +4,13 @@ services:
     influx:
       ports:
         - 8086:8086
+      environment:
+        - INFLUXDB_ADMIN_USER=admin
+        - INFLUXDB_ADMIN_PASSWORD=admin
 
     meteo-agent:
       image: vladikan/meteo-agent:latest
       build: .
       environment:
         - MA_INFLUX_TOKEN=development-token
+        - MA_INFLUX_HOST=http://localhost:8086

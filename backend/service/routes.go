@@ -31,20 +31,19 @@ func postMetrics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if result, reason := validatePostMetrics(m); result {
-		http.Error(w, reason, http.StatusBadRequest)
+	if valid, message := validatePostMetrics(m); !valid {
+		http.Error(w, message, http.StatusBadRequest)
 		return
 	}
 
 	log.Printf("New message for '%s', '%s' agent, and %d measures", m.Token, m.Name, len(m.Data))
 
-	if len(m.Data) == 0 {
-		w.WriteHeader(http.StatusOK) // early exit
-		return
+	if len(m.Data) != 0 {
+		data := toDbType(m, time.Now())
+		db.Write(r.Context(), m.Token, data)
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(``))
 }
 
 func validatePostMetrics(m Metrics) (bool, string) {

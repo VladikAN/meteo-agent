@@ -10,6 +10,12 @@ services:
       volumes:
         - influxdata:/var/lib/influxdb
 
+      environment:
+        - INFLUXDB_DB=meteo
+        - INFLUXDB_HTTP_AUTH_ENABLED=true
+        - INFLUXDB_ADMIN_USER=admin
+        - INFLUXDB_ADMIN_PASSWORD=YWRtaW4=
+
     meteo_agent:
       image: vladikan/meteo-agent:latest
       container_name: "meteo-agent"

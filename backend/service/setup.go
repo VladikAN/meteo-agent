@@ -10,11 +10,13 @@ import (
 	"time"
 
 	"github.com/VladikAN/meteo-agent/config"
+	"github.com/VladikAN/meteo-agent/database"
 
 	"golang.org/x/crypto/acme/autocert"
 )
 
 var srv *http.Server
+var db database.Database
 
 // Start will start http server
 func Start(cfg config.Settings) {
@@ -31,6 +33,10 @@ func Start(cfg config.Settings) {
 		<-ctx.Done()
 		shutdown()
 	}()
+
+	// Configure database
+	db = database.Start(cfg)
+	defer db.Stop()
 
 	// Configure and start service
 	srv = &http.Server{Addr: cfg.Address, Handler: newRouter()}
