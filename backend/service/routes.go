@@ -43,7 +43,7 @@ func postMetrics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Infof("New message for '%s':'%s' agent with %d record(s)", m.Token, m.Name, len(m.Data))
+	log.Infof("New message for %s:%s agent with %d record(s)", m.Token, m.Name, len(m.Data))
 
 	data := toDbType(m, time.Now())
 	if err = db.Write(m.Token, data); err != nil {

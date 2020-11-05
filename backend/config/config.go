@@ -9,6 +9,9 @@ import (
 
 // Settings holds all application settings
 type Settings struct {
+	// Debug will enable debug level log messages
+	Debug bool
+
 	// Address is an endpoint for the inbound connections
 	Address string
 

@@ -32,11 +32,13 @@ services:
             max-file: "5"
   
       environment:
+        - MA_DEBUG=false
         - MA_ADDRESS
         - MA_SSL
         - MA_WHITELIST
-        - MA_INFLUX_HOST
-        - MA_INFLUX_TOKEN
+        - MA_INFLUXHOST
+        - MA_INFLUXUSER
+        - MA_INFLUXPASSWORD
         
 volumes:
     influxdata:

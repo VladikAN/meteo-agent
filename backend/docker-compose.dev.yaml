@@ -12,5 +12,6 @@ services:
       image: vladikan/meteo-agent:latest
       build: .
       environment:
-        - MA_INFLUX_TOKEN=development-token
-        - MA_INFLUX_HOST=http://localhost:8086
+        - MA_DEBUG=true
+        - MA_INFLUXUSER=admin
+        - MA_INFLUXPASSWORD=admin

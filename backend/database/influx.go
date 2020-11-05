@@ -26,11 +26,15 @@ func (db *databaseInflux) Stop() {
 }
 
 func (db *databaseInflux) Write(bucket string, data []Metrics) error {
-	bp, _ := client.NewBatchPoints(client.BatchPointsConfig{
+	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Precision:       "s",
 		RetentionPolicy: "3month",
 		Database:        bucket,
 	})
+
+	if err != nil {
+		return nil
+	}
 
 	for _, item := range data {
 		pt, err := client.NewPoint(
