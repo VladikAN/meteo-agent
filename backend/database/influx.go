@@ -1,6 +1,8 @@
 package database
 
 import (
+	"fmt"
+
 	"github.com/VladikAN/meteo-agent/config"
 
 	client "github.com/influxdata/influxdb1-client/v2"
@@ -25,11 +27,25 @@ func (db *databaseInflux) Stop() {
 	db.client.Close()
 }
 
+func (db *databaseInflux) CreateDatabaseIfMissed(bucket string) error {
+	q := client.NewQuery(fmt.Sprintf("CREATE DATABASE %s", bucket), "", "")
+	if _, err := db.client.Query(q); err != nil {
+		return err
+	}
+
+	q = client.NewQuery(fmt.Sprintf(`CREATE RETENTION POLICY "3month" ON %s DURATION 12w REPLICATION 1 DEFAULT`, bucket), bucket, "")
+	if _, err := db.client.Query(q); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (db *databaseInflux) Write(bucket string, data []Metrics) error {
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
-		Precision:       "s",
-		RetentionPolicy: "3month",
-		Database:        bucket,
+		Precision: "s",
+		//RetentionPolicy: "3month",
+		Database: bucket,
 	})
 
 	if err != nil {

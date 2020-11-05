@@ -45,6 +45,12 @@ func postMetrics(w http.ResponseWriter, r *http.Request) {
 
 	log.Infof("New message for %s:%s agent with %d record(s)", m.Token, m.Name, len(m.Data))
 
+	if err = db.CreateDatabaseIfMissed(m.Token); err != nil {
+		log.Errorf("Error while creating database: %s", err)
+		http.Error(w, fmt.Sprintf("Error while writng data"), http.StatusInternalServerError)
+		return
+	}
+
 	data := toDbType(m, time.Now())
 	if err = db.Write(m.Token, data); err != nil {
 		log.Errorf("Error while writing data: %s", err)

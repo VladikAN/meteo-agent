@@ -15,6 +15,9 @@ type Database interface {
 	// Write performs insert of new records
 	Write(bucket string, data []Metrics) error
 
+	// CreateDatabaseIfMissed will create database if needed
+	CreateDatabaseIfMissed(bucket string) error
+
 	// Stop will close db connection
 	Stop()
 }

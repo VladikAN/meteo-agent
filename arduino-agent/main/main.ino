@@ -1,15 +1,21 @@
 #include "Arduino.h"
 #include "Ticker.h"
 #include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 
+#define AGENT_HOST    "http://192.168.0.107:8081" /* REQUIRED. Target host to send data */
+#define AGENT_TOKEN   "DEVELOP"                   /* REQUIRED. Host token (data group) to save records */
+#define AGENT_NAME    "Agent-1"                   /* REQUIRED. Unique arduino board name to identify this agent */
+
+#define WIFI_SSID     "WIFI_NAME" /* REQUIRED. WIFI hotspot name */
+#define WIFI_PASS     "WIFI_PASS" /* REQUIRED. WIFI hotspot password */
+#define WIFI_TIMEOUT  10          /* Number of seconds for connection establish */
+
 #define SENSORS_SLEEP 2           /* Sensors read interval in seconds */
-#define WIFI_SSID     "WIFI_SSID" /* WIFI hotspot name */
-#define WIFI_PASS     "WIFI_PASS" /* WIFI hotspot password */
-#define WIFI_SLEEP    10          /* Timeout to collect and send data in seconds */
-#define BUFFER        WIFI_SLEEP / SENSORS_SLEEP  /* Circle buffer size */
+#define BUFFER        2           /* Number of items to collect before send */
 
 class Sensor {
   public:
@@ -42,29 +48,35 @@ class Measures {
         String json = data[i]->toJson(offset);
         result.concat(result.length() == 0 ? json : ("," + json));
         offset += SENSORS_SLEEP;
-        delete data[i];
-      }
-
-      for (int i = BUFFER - 1; i >= position; i--) {
-        if (!data[i]) continue;
-        String json = data[i]->toJson(offset);
-        result.concat(result.length() == 0 ? json : ("," + json));
-        offset += SENSORS_SLEEP;
-        delete data[i];
       }
 
       /* Reset position */
+      clear();
+      return "{\"token\":\"" + String(AGENT_TOKEN) + "\","
+             "\"name\":\""+ String(AGENT_NAME) + "\","
+             "\"data\":[" + result + "]}";
+    }
+
+    void clear() {
+      for (int i = BUFFER - 1; i >= 0; i--) {
+        if (!data[i]) continue;
+        delete data[i];
+      }
+
       position = 0;
-      return "[" + result + "]";
     }
 
     void add(Sensor *sensor) {
       if (position == BUFFER) {
-        position = 0;
+        return;
       }
 
       data[position] = sensor;
       position++;
+    }
+
+    bool isFull() {
+      return position == BUFFER;
     }
 
   private:
@@ -74,8 +86,6 @@ class Measures {
 
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASS;
-Ticker sensorsTicker;
-Ticker transferTicker;
 Adafruit_BME280 bme;
 Measures measures = Measures();
 
@@ -89,40 +99,49 @@ void setup() {
 
   /* Setup WIFI */
   WiFi.persistent(false);
+  WiFi.setAutoReconnect(true);
   WiFi.mode(WIFI_STA);
-
+  
   /* Setup Adafruit BME280 */
   bme.begin(&Wire);
   bme.setSampling(
     Adafruit_BME280::MODE_FORCED,
     Adafruit_BME280::SAMPLING_X1,   // temperature
-    Adafruit_BME280::SAMPLING_NONE, // pressure
+    Adafruit_BME280::SAMPLING_NONE, // no pressure
     Adafruit_BME280::SAMPLING_X1,   // humidity
     Adafruit_BME280::FILTER_OFF);
-
-  /* Start timers */
-  sensorsTicker.attach_ms(SENSORS_SLEEP * 1000, readSensors);
-  transferTicker.attach_ms(WIFI_SLEEP * 1000, sendData);
 
   Serial.println(F("Agent started."));
 }
 
-void loop() {}
+int now = 0;
+void loop() {
+  if (millis() - now <= SENSORS_SLEEP * 1000) {
+    return;
+  }
+
+  // Can't use Ticker because NodeMCU has internal timers
+  readSensors();
+  now = millis();
+}
 
 void readSensors() {
   digitalWrite(LED_BUILTIN, LOW); /* Single LED flash for read sensors operation */
 
   bme.takeForcedMeasurement();
-  Sensor *current = new Sensor(
-    bme.readTemperature(),
-    bme.readHumidity());
+  Sensor *current = new Sensor(bme.readTemperature(), bme.readHumidity());
   measures.add(current);
 
   Serial.println("Sensor values,"
                  " t: '" + String(current->temperature) + " C'"
                  " , h: '" + String(current->humidity) + " %'");
 
-  delay(50);
+  if (measures.isFull()) {
+    sendData();
+  } else {
+    delay(50);
+  }
+  
   digitalWrite(LED_BUILTIN, HIGH);
 }
 
@@ -131,22 +150,45 @@ void sendData() {
     /* Connect to WI-FI */
     Serial.println(F("Starting WIFI connection ..."));
     WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED) {
+
+    int timeLeft = WIFI_TIMEOUT * 1000;
+    while (WiFi.status() != WL_CONNECTED && timeLeft >= 0) {
       /* Blink LED while it's connecting */
       digitalWrite(LED_BUILTIN, LOW);
       delay(100);
       digitalWrite(LED_BUILTIN, HIGH);
       delay(100);
+
+      timeLeft -= 200;
     }
 
-    /* WI-FI connected, print connection details */
-    Serial.print(F("WIFI connected to "));
-    Serial.println(ssid);
-    Serial.println("DHCP gives " + WiFi.localIP());
+    if (WiFi.status() != WL_CONNECTED) {
+      WiFi.disconnect();
+      measures.clear();
+
+      Serial.println(F("Failed to establish WIFI connection"));
+      return;
+    } else {
+      /* WI-FI connected, print connection details */
+      Serial.print(F("WIFI connected to "));
+      Serial.println(ssid);
+      Serial.println("DHCP gives " + WiFi.localIP());
+    }
   }
 
   /* Send data */
   Serial.println(F("Sending data ..."));
-  Serial.println(measures.toJsonAndClear());
+
+  String postData = measures.toJsonAndClear(); 
+  HTTPClient http; 
+  http.begin(AGENT_HOST); 
+  http.addHeader("Content-Type", "application/json"); 
+  auto httpCode = http.POST(postData); 
+  String payload = http.getString();
+  Serial.print(F("Server responded with "));
+  Serial.print(httpCode);
+  Serial.println(payload);
+  http.end();
+  
   Serial.println(F("Data sent."));
 }
