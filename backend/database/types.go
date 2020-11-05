@@ -1,14 +1,19 @@
 package database
 
 import (
-	"context"
 	"time"
+
+	client "github.com/influxdata/influxdb1-client/v2"
 )
+
+type databaseInflux struct {
+	client client.Client
+}
 
 // Database is a common interface for read and write operations
 type Database interface {
 	// Write performs insert of new records
-	Write(ctx context.Context, bucket string, data []Metrics)
+	Write(bucket string, data []Metrics) error
 
 	// Stop will close db connection
 	Stop()

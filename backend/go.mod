@@ -4,7 +4,8 @@ go 1.15
 
 require (
 	github.com/go-chi/chi v4.1.2+incompatible
-	github.com/influxdata/influxdb-client-go/v2 v2.2.0
+	github.com/influxdata/influxdb1-client v0.0.0-20200827194710-b269163b24ab
+	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.5.1 // indirect
 	golang.org/x/crypto v0.0.0-20191112222119-e1110fd1c708

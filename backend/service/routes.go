@@ -3,9 +3,10 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -26,8 +27,8 @@ func postMetrics(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&m)
 	if err != nil {
-		http.Error(w,
-			fmt.Errorf("Error while reading input data: %s", err).Error(), http.StatusBadRequest)
+		log.Warnf("Error while reading request data: %s", err)
+		http.Error(w, fmt.Sprintf("Input data is not valid: %s", err), http.StatusBadRequest)
 		return
 	}
 
@@ -36,14 +37,22 @@ func postMetrics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("New message for '%s', '%s' agent, and %d measures", m.Token, m.Name, len(m.Data))
-
-	if len(m.Data) != 0 {
-		data := toDbType(m, time.Now())
-		db.Write(r.Context(), m.Token, data)
+	if len(m.Data) == 0 {
+		log.Debugf("Empty data received for %s:%s", m.Token, m.Name)
+		w.Write([]byte("No data received"))
+		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	log.Infof("New message for '%s':'%s' agent with %d record(s)", m.Token, m.Name, len(m.Data))
+
+	data := toDbType(m, time.Now())
+	if err = db.Write(m.Token, data); err != nil {
+		log.Errorf("Error while writing data: %s", err)
+		http.Error(w, fmt.Sprintf("Error while writng data"), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write([]byte("Data is saved"))
 }
 
 func validatePostMetrics(m Metrics) (bool, string) {

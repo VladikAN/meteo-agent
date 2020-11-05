@@ -2,12 +2,13 @@ package service
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/VladikAN/meteo-agent/config"
 	"github.com/VladikAN/meteo-agent/database"
@@ -25,7 +26,7 @@ func Start(cfg config.Settings) {
 		stop := make(chan os.Signal, 1)
 		signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 		<-stop
-		log.Print("WARN System interrupt or terminate signal")
+		log.Warn("System interrupt or terminate signal")
 		cancel()
 	}()
 
@@ -34,15 +35,19 @@ func Start(cfg config.Settings) {
 		shutdown()
 	}()
 
+	var err error
+
 	// Configure database
-	db = database.Start(cfg)
+	db, err = database.Start(cfg)
+	if err != nil {
+		log.Panicf("Failed to connect to the influx: %s", err)
+	}
 	defer db.Stop()
 
 	// Configure and start service
 	srv = &http.Server{Addr: cfg.Address, Handler: newRouter()}
-	log.Printf("Server starting at %s", cfg.Address)
+	log.Infof("Server starting at %s", cfg.Address)
 
-	var err error
 	if cfg.Ssl {
 		m := &autocert.Manager{
 			Cache:      autocert.DirCache("autocert"),
@@ -51,7 +56,7 @@ func Start(cfg config.Settings) {
 		}
 
 		srv.TLSConfig = m.TLSConfig()
-		log.Printf("Setting up SSL for the whitelist")
+		log.Info("Setting up SSL for the whitelist")
 
 		// serve HTTP, which will redirect automatically to HTTPS
 		go http.ListenAndServe(":http", m.HTTPHandler(nil))
@@ -60,7 +65,7 @@ func Start(cfg config.Settings) {
 		err = srv.ListenAndServe()
 	}
 
-	log.Printf("Server was terminated or failed to start, %s", err)
+	log.Warnf("Server was terminated or failed to start, %s", err)
 }
 
 func shutdown() {
@@ -68,6 +73,6 @@ func shutdown() {
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Printf("Server shutdown error, %s", err)
+		log.Infof("Server shutdown error, %s", err)
 	}
 }
