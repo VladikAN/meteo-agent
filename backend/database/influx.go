@@ -28,14 +28,18 @@ func (db *databaseInflux) Stop() {
 }
 
 func (db *databaseInflux) CreateDatabaseIfMissed(bucket string) error {
-	q := client.NewQuery(fmt.Sprintf("CREATE DATABASE %s", bucket), "", "")
-	if _, err := db.client.Query(q); err != nil {
+	q := client.NewQuery(fmt.Sprintf(`CREATE DATABASE "%s"`, bucket), "", "")
+	if resp, err := db.client.Query(q); err != nil {
 		return err
+	} else if len(resp.Err) != 0 {
+		return fmt.Errorf(resp.Err)
 	}
 
-	q = client.NewQuery(fmt.Sprintf(`CREATE RETENTION POLICY "3month" ON %s DURATION 12w REPLICATION 1 DEFAULT`, bucket), bucket, "")
-	if _, err := db.client.Query(q); err != nil {
+	q = client.NewQuery(fmt.Sprintf(`CREATE RETENTION POLICY "3month" ON "%s" DURATION 12w REPLICATION 1 DEFAULT`, bucket), bucket, "")
+	if resp, err := db.client.Query(q); err != nil {
 		return err
+	} else if len(resp.Err) != 0 {
+		return fmt.Errorf(resp.Err)
 	}
 
 	return nil
@@ -43,9 +47,9 @@ func (db *databaseInflux) CreateDatabaseIfMissed(bucket string) error {
 
 func (db *databaseInflux) Write(bucket string, data []Metrics) error {
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
-		Precision: "s",
-		//RetentionPolicy: "3month",
-		Database: bucket,
+		Precision:       "s",
+		RetentionPolicy: "3month",
+		Database:        bucket,
 	})
 
 	if err != nil {
