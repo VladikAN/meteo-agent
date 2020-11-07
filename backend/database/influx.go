@@ -53,7 +53,7 @@ func (db *databaseInflux) Write(bucket string, data []Metrics) error {
 	})
 
 	if err != nil {
-		return nil
+		return err
 	}
 
 	for _, item := range data {
