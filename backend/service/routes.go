@@ -47,14 +47,14 @@ func postMetrics(w http.ResponseWriter, r *http.Request) {
 
 	if err = db.CreateDatabaseIfMissed(m.Token); err != nil {
 		log.Errorf("Error while creating database: %s", err)
-		http.Error(w, fmt.Sprintf("Error while writng data"), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error while writing data"), http.StatusInternalServerError)
 		return
 	}
 
 	data := toDbType(m, time.Now())
 	if err = db.Write(m.Token, data); err != nil {
 		log.Errorf("Error while writing data: %s", err)
-		http.Error(w, fmt.Sprintf("Error while writng data"), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error while writing data"), http.StatusInternalServerError)
 		return
 	}
 
