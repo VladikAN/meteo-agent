@@ -1,0 +1,7 @@
+debug: false
+address: :8081
+ssl: false
+whitelist: example.com, www.example.com
+influxHost: http://localhost:8086
+influxUser: admin
+influxPassword: admin

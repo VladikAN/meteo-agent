@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+    influx:
+      ports:
+        - 8086:8086
+      environment:
+        - INFLUXDB_ADMIN_USER=admin
+        - INFLUXDB_ADMIN_PASSWORD=admin
+
+    meteo-agent:
+      image: vladikan/meteo-agent:latest
+      build: .
+      environment:
+        - MA_DEBUG=true
+        - MA_INFLUXUSER=admin
+        - MA_INFLUXPASSWORD=admin
