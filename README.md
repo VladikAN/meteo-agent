@@ -1,5 +1,7 @@
 Meteo station for remore *temperature* and *humidity* measurements.
 
+![version - 1](/pics/deployment.png)
+
 # Arduino
 
 Sketch is based on NodeMCU with wi-fi onboard and Adafruit BME280.
