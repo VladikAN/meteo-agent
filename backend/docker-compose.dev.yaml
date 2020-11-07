@@ -13,5 +13,6 @@ services:
       build: .
       environment:
         - MA_DEBUG=true
+        - MA_INFLUXHOST=http://influx:8086
         - MA_INFLUXUSER=admin
         - MA_INFLUXPASSWORD=admin
