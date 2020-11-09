@@ -1,15 +1,12 @@
-version: 1.0.0-{build}
-
-pull_requests:
-  do_not_increment_build_number: true
-
-image: Ubuntu1804
-
+version: 1.0.{build}
+image: Ubuntu
 build_script:
 - sh: >-
-    cd backend/
-    
     go version
+
+
+    cd ./backend
+
 
     go build ./main.go
 test_script:
