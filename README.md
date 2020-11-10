@@ -10,9 +10,9 @@ Board official page: [NodeMcu - an open-source firmware and development kit](htt
 
 ## Install
 
-For the NodeMCU Amica board [download driver CP2102](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers) firstly.
+For the NodeMCU Amica board install [board support tools](https://create.arduino.cc/projecthub/electropeak/getting-started-w-nodemcu-esp8266-on-arduino-ide-28184f).
 
-Then dowload libraries by calling `Sketch` > `Include Library` > `Manage Libraries` and searching for:
+Then download libraries by calling `Sketch` > `Include Library` > `Manage Libraries` and searching for:
 
 * Adafruit Unified Sensor.
 

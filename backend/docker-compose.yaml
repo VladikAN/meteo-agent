@@ -14,7 +14,7 @@ services:
         - INFLUXDB_ADMIN_PASSWORD=YWRtaW4=
 
     meteo-agent:
-      image: vladikan/meteo-agent:latest
+      image: vladikan/meteo-agent-backend:preview
       container_name: "meteo-agent"
       hostname: "meteo-agent"
       restart: always
