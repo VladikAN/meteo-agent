@@ -6,7 +6,8 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 
-#define AGENT_HOST    "http://192.168.0.107:8081" /* REQUIRED. Target host to send data */
+#define AGENT_HOST    "http://192.168.0.1071"     /* REQUIRED. Target host to send data */
+#define AGENT_PORT    443                         /* REQUIRED. Target port to send data */
 #define AGENT_TOKEN   "DEVELOP"                   /* REQUIRED. Host token (data group) to save records */
 #define AGENT_NAME    "Agent-1"                   /* REQUIRED. Unique arduino board name to identify this agent */
 
@@ -14,8 +15,8 @@
 #define WIFI_PASS     "WIFI_PASS" /* REQUIRED. WIFI hotspot password */
 #define WIFI_TIMEOUT  10          /* Number of seconds for connection establish */
 
-#define SENSORS_SLEEP 2           /* Sensors read interval in seconds */
-#define BUFFER        2           /* Number of items to collect before send */
+#define SENSORS_SLEEP 60          /* Sensors read interval in seconds */
+#define BUFFER        10          /* Number of items to collect before send */
 
 class Sensor {
   public:
@@ -101,6 +102,7 @@ void setup() {
   WiFi.persistent(false);
   WiFi.setAutoReconnect(true);
   WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
   
   /* Setup Adafruit BME280 */
   bme.begin(&Wire);
@@ -165,7 +167,6 @@ void sendData() {
     if (WiFi.status() != WL_CONNECTED) {
       WiFi.disconnect();
       measures.clear();
-
       Serial.println(F("Failed to establish WIFI connection"));
       return;
     } else {
@@ -177,11 +178,17 @@ void sendData() {
   }
 
   /* Send data */
-  Serial.println(F("Sending data ..."));
+  Serial.print(F("Sending data to "));
+  Serial.println(String(AGENT_HOST));
 
-  String postData = measures.toJsonAndClear(); 
-  HTTPClient http; 
-  http.begin(AGENT_HOST); 
+  String postData = measures.toJsonAndClear();
+
+  WiFiClientSecure client;
+  client.setInsecure(); // ignore HTTPS fingerprint, insecure way to connect
+  client.connect(AGENT_HOST, AGENT_PORT);
+  
+  HTTPClient http;
+  http.begin(client, AGENT_HOST); 
   http.addHeader("Content-Type", "application/json"); 
   auto httpCode = http.POST(postData); 
   String payload = http.getString();
