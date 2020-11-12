@@ -6,30 +6,27 @@ services:
       container_name: "influx"
       hostname: "influx"
       restart: always
-
       volumes:
         - influxdata:/var/lib/influxdb
-
       environment:
         - INFLUXDB_HTTP_AUTH_ENABLED=true
         - INFLUXDB_ADMIN_USER=admin
         - INFLUXDB_ADMIN_PASSWORD=YWRtaW4=
 
-    meteo_agent:
-      image: vladikan/meteo-agent:latest
+    meteo-agent:
+      image: vladikan/meteo-agent-backend:preview
       container_name: "meteo-agent"
       hostname: "meteo-agent"
       restart: always
-      
       depends_on:
         - influx
-  
       logging:
         driver: json-file
         options:
             max-size: "5m"
             max-file: "5"
-  
+      ports:
+        - 8081:8081
       environment:
         - MA_DEBUG=false
         - MA_ADDRESS

@@ -1,0 +1,13 @@
+version: 1.0.{build}
+image: Ubuntu
+build_script:
+- sh: >-
+    go version
+
+
+    cd ./backend
+
+
+    go build ./main.go
+test_script:
+- sh: go test ./...
