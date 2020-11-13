@@ -1,6 +1,10 @@
-Meteo station for remore *temperature* and *humidity* measurements.
+Meteo station for remote *temperature* and *humidity* measurements.
 
-![version - 1](/pics/deployment.png)
+![version - 1 - deployment](/pics/deployment.png)
+
+Demo results are observed by grafana:
+
+![version - 1 - grafana](/pics/grafana.png)
 
 # Arduino
 
@@ -22,7 +26,7 @@ Then download libraries by calling `Sketch` > `Include Library` > `Manage Librar
 
 Update `#define` variables to desired host settings and wi-fi credentials.
 
-* **AGENT_HOST** is a target host to send JSON measurements.
+* **AGENT_HOST** and **AGENT_PORT** is a target host and port to send JSON measurements.
 
 * **AGENT_TOKEN** is a unique device group name. Basically any string variable, like `MyHome`, `Garage` or else.
 
