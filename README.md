@@ -36,10 +36,6 @@ Update `#define` variables to desired host settings and wi-fi credentials.
 
 * **WIFI_PASS** is a WIFI network password.
 
-## To do
-
-* NodeMCU has [deep-sleep feature](https://randomnerdtutorials.com/esp8266-deep-sleep-with-arduino-ide/) for the energy saving.
-
 ## References
 
 * [Getting started with board](https://create.arduino.cc/projecthub/electropeak/getting-started-w-nodemcu-esp8266-on-arduino-ide-28184f).
