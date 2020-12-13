@@ -17,6 +17,7 @@
 
 #define SENSORS_SLEEP 60          /* Sensors read interval in seconds */
 #define BUFFER        10          /* Number of items to collect before send */
+#define DEEP_SLEEP    false       /* Activate deep-sleep function. You will need to connect D0 and RST pins. BUFFER value will be ignored. */
 
 class Sensor {
   public:
@@ -118,6 +119,14 @@ void setup() {
 
 int now = 0;
 void loop() {
+  /* Force measure on start for deep sleep mode */
+  if (DEEP_SLEEP) {
+    readSensors();
+    ESP.deepSleep(SENSORS_SLEEP * 1e6);
+    return; /* not reachable */
+  }
+
+  /* Default mode based on timers and BUFFER */
   if (millis() - now <= SENSORS_SLEEP * 1000) {
     return;
   }
@@ -138,7 +147,7 @@ void readSensors() {
                  " t: '" + String(current->temperature) + " C'"
                  " , h: '" + String(current->humidity) + " %'");
 
-  if (measures.isFull()) {
+  if (measures.isFull() || DEEP_SLEEP) {
     sendData();
   } else {
     delay(50);
